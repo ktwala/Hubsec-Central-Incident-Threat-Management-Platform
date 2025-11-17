@@ -1,0 +1,145 @@
+# Wazuh Alert Mapping Configuration
+# Defines how to extract and normalize fields from Wazuh alerts
+
+# Field mappings - List of possible paths to extract each field
+# The normalizer will try each path in order until it finds a value
+field_mappings:
+  source_ip:
+    - data.srcip
+    - data.src_ip
+    - srcip
+    - data.win.eventdata.ipAddress
+
+  dest_ip:
+    - data.dstip
+    - data.dst_ip
+    - dstip
+    - data.aws.sourceIPAddress
+
+  source_port:
+    - data.srcport
+    - data.src_port
+
+  dest_port:
+    - data.dstport
+    - data.dst_port
+
+  protocol:
+    - data.protocol
+    - data.win.eventdata.protocol
+
+  username:
+    - data.dstuser
+    - data.win.eventdata.targetUserName
+    - data.win.eventdata.subjectUserName
+    - data.user
+    - data.aws.userIdentity.userName
+
+  filename:
+    - data.file
+    - data.win.eventdata.image
+    - data.win.eventdata.targetFilename
+
+  file_path:
+    - data.path
+    - data.win.eventdata.imagePath
+
+  file_hash:
+    - data.md5
+    - data.sha256
+    - data.sha1
+    - data.hash
+    - data.win.eventdata.hashes
+
+# Category mappings - Map rule descriptions/groups to categories
+category_mappings:
+  authentication:
+    - authentication
+    - login
+    - logon
+    - logoff
+    - password
+    - auth
+
+  malware:
+    - malware
+    - virus
+    - trojan
+    - ransomware
+    - rootkit
+    - backdoor
+
+  network:
+    - network
+    - firewall
+    - ids
+    - ips
+    - connection
+
+  web:
+    - web
+    - http
+    - https
+    - apache
+    - nginx
+    - iis
+
+  system:
+    - system
+    - windows
+    - linux
+    - kernel
+    - service
+
+  intrusion:
+    - intrusion
+    - exploit
+    - attack
+    - breach
+    - compromise
+
+  policy_violation:
+    - policy
+    - violation
+    - compliance
+    - unauthorized
+
+  data_loss:
+    - data
+    - exfiltration
+    - leak
+    - transfer
+
+# Event type extraction
+# Maps Wazuh rule groups to event types
+event_type_priority:
+  # Skip these generic groups
+  skip_groups:
+    - wazuh
+    - syslog
+    - ossec
+    - syscheck
+
+  # Priority order for event types
+  priority_groups:
+    - malware
+    - attack
+    - exploit
+    - authentication
+    - web
+    - network
+
+# Normalization rules
+normalization_rules:
+  # Convert timestamps to ISO format
+  timestamp_format: "%Y-%m-%dT%H:%M:%S.%f%z"
+
+  # IP address validation
+  validate_ip: true
+
+  # Port range validation (1-65535)
+  validate_port: true
+
+  # Clean up field values
+  trim_whitespace: true
+  lowercase_categories: true

@@ -1,0 +1,127 @@
+# Severity Mapping Rules
+# Defines how to determine severity levels for alerts
+
+# Rule level to severity mapping
+# Wazuh rule levels range from 0-15+
+rule_level_mapping:
+  range:
+    '0-3': info      # Informational events
+    '4-6': low       # Low priority events
+    '7-10': medium   # Medium priority, notable events
+    '11-14': high    # High priority, requires attention
+    '15-20': critical # Critical, immediate action required
+
+# Keyword-based severity boost
+# If these keywords appear in rule description or groups, boost severity
+keyword_boost:
+  critical:
+    - critical
+    - emergency
+    - rootkit
+    - ransomware
+    - data breach
+    - exfiltration
+    - privilege escalation
+
+  high:
+    - attack
+    - exploit
+    - malware
+    - breach
+    - compromise
+    - unauthorized access
+    - brute force
+    - sql injection
+
+  medium:
+    - suspicious
+    - anomaly
+    - failed login
+    - policy violation
+    - configuration change
+
+# Category-based severity
+# Some categories are inherently more severe
+category_severity:
+  malware: critical
+  intrusion: high
+  data_loss: high
+  authentication: medium
+  policy_violation: low
+
+# Alert correlation for severity escalation
+# Multiple alerts of same type increase severity
+correlation_rules:
+  # If N alerts of same type within timeframe, escalate
+  thresholds:
+    - count: 5
+      within_minutes: 5
+      escalate_to: high
+
+    - count: 10
+      within_minutes: 10
+      escalate_to: critical
+
+# MITRE ATT&CK based severity
+# Certain MITRE techniques indicate higher severity
+mitre_severity:
+  high_risk_techniques:
+    - T1486  # Data Encrypted for Impact (Ransomware)
+    - T1078  # Valid Accounts
+    - T1003  # OS Credential Dumping
+    - T1059  # Command and Scripting Interpreter
+    - T1068  # Exploitation for Privilege Escalation
+    - T1210  # Exploitation of Remote Services
+
+  medium_risk_techniques:
+    - T1110  # Brute Force
+    - T1021  # Remote Services
+    - T1053  # Scheduled Task/Job
+    - T1071  # Application Layer Protocol
+
+# Alert source priority
+# Some sources are more trusted/critical
+source_priority:
+  critical_sources:
+    - EDR
+    - IDS
+    - IPS
+
+  high_sources:
+    - Firewall
+    - WAF
+    - Antivirus
+
+  medium_sources:
+    - Syslog
+    - Application Logs
+
+# Time-based severity adjustment
+# Alerts during certain times may be more suspicious
+time_based_rules:
+  # Activity during off-hours is more suspicious
+  off_hours:
+    enabled: true
+    hours: [22, 23, 0, 1, 2, 3, 4, 5, 6]  # 10 PM - 6 AM
+    severity_boost: 1  # Increase by one level
+
+  # Weekend activity
+  weekend:
+    enabled: true
+    severity_boost: 1
+
+# Asset criticality
+# Alerts from critical assets are more severe
+asset_criticality:
+  critical_assets:
+    prefixes:
+      - prod-
+      - db-
+      - dc-
+    severity_boost: 2
+
+  sensitive_assets:
+    prefixes:
+      - fin-
+      - hr-
+    severity_boost: 1
