@@ -4,42 +4,16 @@ Central Incident & Threat Management Platform
 """
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
-from contextlib import contextmanager
+from sqlalchemy.orm import Session
+from sqlalchemy import text
 import os
 
 from backend.app.models.models import Base
+from backend.app.database import engine, get_db, DATABASE_URL
 from backend.app.api.v1 import incidents, cases, alerts, users
-
-# Database configuration
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./hubsec.db")
-
-# Create database engine
-engine = create_engine(
-    DATABASE_URL,
-    connect_args={"check_same_thread": False} if "sqlite" in DATABASE_URL else {},
-    echo=False  # Set to True for SQL query debugging
-)
-
-# Create session factory
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # Create all tables
 Base.metadata.create_all(bind=engine)
-
-
-# Dependency to get database session
-def get_db():
-    """
-    Dependency function to get database session
-    Ensures session is properly closed after request
-    """
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 
 # Create FastAPI application
@@ -117,7 +91,7 @@ async def health_check(db: Session = Depends(get_db)):
     """
     try:
         # Test database connection
-        db.execute("SELECT 1")
+        db.execute(text("SELECT 1"))
         return {
             "status": "healthy",
             "database": "connected",

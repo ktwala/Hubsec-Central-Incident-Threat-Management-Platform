@@ -55,7 +55,7 @@ class UserRole(str, Enum):
 class UserBase(BaseModel):
     """Base user schema"""
     username: str = Field(..., min_length=3, max_length=100)
-    email: EmailStr
+    email: str  # Changed from EmailStr to allow .local domains for testing
     full_name: Optional[str] = None
     role: UserRole = UserRole.ANALYST
 
@@ -67,7 +67,7 @@ class UserCreate(UserBase):
 
 class UserUpdate(BaseModel):
     """Schema for updating user"""
-    email: Optional[EmailStr] = None
+    email: Optional[str] = None  # Changed from EmailStr to allow .local domains
     full_name: Optional[str] = None
     role: Optional[UserRole] = None
     is_active: Optional[bool] = None
@@ -197,7 +197,7 @@ class ActivityBase(BaseModel):
     """Base activity schema"""
     action: str
     description: Optional[str] = None
-    metadata: Optional[Dict[str, Any]] = None
+    meta_data: Optional[Dict[str, Any]] = None
 
 
 class ActivityCreate(ActivityBase):
@@ -259,7 +259,7 @@ class CaseInDB(CaseBase):
     updated_at: datetime
     closed_at: Optional[datetime] = None
     resolution: Optional[str] = None
-    metadata: Optional[Dict[str, Any]] = None
+    meta_data: Optional[Dict[str, Any]] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -322,7 +322,7 @@ class IncidentInDB(IncidentBase):
     updated_at: datetime
     detected_at: Optional[datetime] = None
     resolved_at: Optional[datetime] = None
-    metadata: Optional[Dict[str, Any]] = None
+    meta_data: Optional[Dict[str, Any]] = None
 
     model_config = ConfigDict(from_attributes=True)
 

@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime, timedelta
 
-from backend.app.main import get_db
+from backend.app.database import get_db
 from backend.app.models.models import Alert, AlertStatus, SeverityLevel
 from backend.app.schemas import schemas
 from backend.app.services.wazuh_normalizer import get_normalizer

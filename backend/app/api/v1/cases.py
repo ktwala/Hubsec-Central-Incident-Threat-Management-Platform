@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime
 
-from backend.app.main import get_db
+from backend.app.database import get_db
 from backend.app.models.models import Case, CaseStatus, SeverityLevel, Alert, User, Activity
 from backend.app.schemas import schemas
 from backend.app.services.case_engine import CaseEngine

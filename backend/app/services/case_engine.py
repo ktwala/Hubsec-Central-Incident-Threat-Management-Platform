@@ -179,7 +179,7 @@ class CaseEngine:
             priority=alert.severity,
             status=CaseStatus.OPEN,
             incident_id=incident.id,
-            metadata={
+            meta_data={
                 'auto_created': True,
                 'source_alert_id': alert.id,
                 'correlation_key': alert.src_ip or alert.hostname
@@ -197,7 +197,7 @@ class CaseEngine:
             case=case,
             action="case_created",
             description=f"Case automatically created from alert {alert.id}",
-            metadata={'alert_id': alert.id}
+            meta_data={'alert_id': alert.id}
         )
 
         self.db.commit()
@@ -240,7 +240,7 @@ class CaseEngine:
             source_id=alert.source_id,
             category=alert.category,
             detected_at=alert.timestamp,
-            metadata={
+            meta_data={
                 'auto_created': True,
                 'source_alert_id': alert.id
             }
@@ -277,7 +277,7 @@ class CaseEngine:
             case=case,
             action="alert_added",
             description=f"Alert {alert.id} added to case",
-            metadata={'alert_id': alert.id, 'alert_severity': alert.severity.value}
+            meta_data={'alert_id': alert.id, 'alert_severity': alert.severity.value}
         )
 
         case.updated_at = datetime.utcnow()
@@ -315,7 +315,7 @@ class CaseEngine:
         case: Case,
         action: str,
         description: str,
-        metadata: Optional[Dict[str, Any]] = None,
+        meta_data: Optional[Dict[str, Any]] = None,
         user_id: Optional[int] = None
     ):
         """Log an activity for a case"""
@@ -328,7 +328,7 @@ class CaseEngine:
             user_id=user_id,
             action=action,
             description=description,
-            metadata=metadata or {}
+            meta_data=meta_data or {}
         )
 
         self.db.add(activity)
@@ -399,7 +399,7 @@ class CaseEngine:
                 case=case,
                 action="case_escalated",
                 description=f"Case escalated: {', '.join(escalation_reason)}",
-                metadata={'escalation_reasons': escalation_reason}
+                meta_data={'escalation_reasons': escalation_reason}
             )
 
             # Also escalate the parent incident

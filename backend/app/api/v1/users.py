@@ -8,7 +8,7 @@ from typing import List, Optional
 from datetime import datetime
 import hashlib
 
-from backend.app.main import get_db
+from backend.app.database import get_db
 from backend.app.models.models import User, UserRole
 from backend.app.schemas import schemas
 
@@ -309,7 +309,7 @@ def get_user_activity(
                 "description": a.description,
                 "case_id": a.case_id,
                 "created_at": a.created_at.isoformat(),
-                "metadata": a.metadata
+                "meta_data": a.meta_data
             }
             for a in activities
         ]

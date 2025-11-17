@@ -104,7 +104,7 @@ class Incident(Base):
     resolved_at = Column(DateTime)
 
     # Additional metadata
-    metadata = Column(JSON)  # Flexible field for additional data
+    meta_data = Column(JSON)  # Flexible field for additional data
     tags = Column(JSON)  # Array of tags
 
     # Relationships
@@ -142,7 +142,7 @@ class Case(Base):
     # Case details
     resolution = Column(Text)
     tags = Column(JSON)
-    metadata = Column(JSON)
+    meta_data = Column(JSON)
 
     # Relationships
     alerts = relationship("Alert", secondary=case_alerts, back_populates="cases")
@@ -292,7 +292,7 @@ class Activity(Base):
     user = relationship("User", back_populates="activities")
 
     # Metadata
-    metadata = Column(JSON)  # Additional context about the activity
+    meta_data = Column(JSON)  # Additional context about the activity
 
     # Timestamp
     created_at = Column(DateTime, default=datetime.utcnow, index=True)
