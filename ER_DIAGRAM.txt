@@ -1,0 +1,265 @@
+╔════════════════════════════════════════════════════════════════════════════╗
+║                HUBSEC SOC PLATFORM - ENTITY RELATIONSHIP DIAGRAM           ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                            DETAILED ER DIAGRAM                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+
+                    ┌────────────────────────┐
+                    │        USERS           │
+                    ├────────────────────────┤
+                    │ PK  id                 │
+                    │ UQ  username           │
+                    │ UQ  email              │
+                    │     full_name          │
+                    │     hashed_password    │
+                    │     is_active          │
+                    │     role               │
+                    │     created_at         │
+                    │     last_login         │
+                    └────────────────────────┘
+                             │      │
+                             │      │ 1:N (assigned_to)
+                             │      │
+                 ┌───────────┘      └────────────────┐
+                 │ 1:N                                │
+                 │ (author)                           │
+                 │                                    ▼
+                 │                     ┌──────────────────────────┐
+                 │                     │      INCIDENTS           │
+                 │                     ├──────────────────────────┤
+                 │                     │ PK  id                   │
+                 │                     │     title                │
+                 │                     │     description          │
+                 │                     │     severity             │
+                 │                     │     status               │
+                 │                     │     source               │
+                 │                     │     source_id            │
+                 │                     │     category             │
+                 │                     │     subcategory          │
+                 │                     │ FK  assigned_to_id       │──┐
+                 │                     │     created_at           │  │
+                 │                     │     updated_at           │  │ FK to
+                 │                     │     detected_at          │  │ users.id
+                 │                     │     resolved_at          │  │
+                 │                     │     meta_data            │  │
+                 │                     │     tags                 │  │
+                 │                     └──────────────────────────┘  │
+                 │                              │                    │
+                 │                              │ 1:N                │
+                 │                              │                    │
+                 │                              ▼                    │
+                 │                     ┌──────────────────────────┐  │
+                 │                     │        CASES             │  │
+                 │                     ├──────────────────────────┤  │
+                 │                     │ PK  id                   │  │
+                 │                     │     title                │  │
+                 │                     │     description          │  │
+                 │                     │     status               │  │
+                 │                     │     priority             │  │
+                 │                     │ FK  incident_id          │──┘
+                 │                     │     created_at           │
+                 │                     │     updated_at           │
+                 │                     │     closed_at            │
+                 │                     │     resolution           │
+                 │                     │     tags                 │
+                 │                     │     meta_data            │
+                 │                     └──────────────────────────┘
+                 │                              │     │     │
+                 │                              │     │     │ 1:N
+                 │                              │     │     │
+                 ▼                              │     │     ▼
+    ┌────────────────────────┐                 │     │  ┌──────────────────────────┐
+    │      COMMENTS          │                 │     │  │      ACTIVITIES          │
+    ├────────────────────────┤                 │     │  ├──────────────────────────┤
+    │ PK  id                 │                 │     │  │ PK  id                   │
+    │     content            │                 │     │  │     action               │
+    │ FK  incident_id        │─────────────────┘     │  │     description          │
+    │ FK  case_id            │───────────────────────┘  │ FK  case_id              │──┐
+    │ FK  author_id          │──────────────────────────│ FK  user_id              │  │
+    │     created_at         │                          │     meta_data            │  │
+    │     updated_at         │                          │     created_at           │  │
+    └────────────────────────┘                          └──────────────────────────┘  │
+                                                                 │                    │
+                                                                 │ FK to              │ FK to
+                                                                 │ users.id           │ cases.id
+                                                                 ▼                    │
+                                                        ┌────────────────┐            │
+                                                        │  (USERS table) │            │
+                                                        └────────────────┘            │
+                                                                                      │
+                                                                                      │
+┌────────────────────────────┐    M:N     ┌──────────────────────────┐              │
+│      CASE_ASSIGNMENTS      │◄───────────┤      (CASES table)       │◄─────────────┘
+│   (Join Table)             │            └──────────────────────────┘
+├────────────────────────────┤                     │
+│ PK,FK  case_id             │─────────────────────┘
+│ PK,FK  user_id             │─────────┐
+└────────────────────────────┘         │
+                                       │ FK to users.id
+                                       ▼
+                              ┌────────────────┐
+                              │  (USERS table) │
+                              └────────────────┘
+
+
+┌────────────────────────────┐    M:N     ┌──────────────────────────┐
+│       CASE_ALERTS          │◄───────────┤      (CASES table)       │
+│      (Join Table)          │            └──────────────────────────┘
+├────────────────────────────┤                     │
+│ PK,FK  case_id             │─────────────────────┘
+│ PK,FK  alert_id            │─────────┐
+└────────────────────────────┘         │
+                                       │ FK to alerts.id
+                                       ▼
+                              ┌──────────────────────────┐
+                              │        ALERTS            │
+                              ├──────────────────────────┤
+                              │ PK  id                   │
+                              │     source               │
+                              │ UQ  source_id            │
+                              │     rule_id              │
+                              │     rule_description     │
+                              │     severity             │
+                              │     status               │
+                              │     event_type           │
+                              │     category             │
+                              │     src_ip               │
+                              │     dst_ip               │
+                              │     src_port             │
+                              │     dst_port             │
+                              │     protocol             │
+                              │     hostname             │
+                              │     agent_id             │
+                              │     agent_name           │
+                              │     username             │
+                              │     filename             │
+                              │     file_path            │
+                              │     file_hash            │
+                              │     timestamp            │
+                              │     created_at           │
+                              │     raw_data             │
+                              │     normalized_data      │
+                              └──────────────────────────┘
+
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║                              LEGEND                                        ║
+╠════════════════════════════════════════════════════════════════════════════╣
+║                                                                            ║
+║  PK   = Primary Key                                                        ║
+║  FK   = Foreign Key                                                        ║
+║  UQ   = Unique Constraint                                                  ║
+║  1:N  = One-to-Many Relationship                                           ║
+║  M:N  = Many-to-Many Relationship                                          ║
+║  ──►  = Foreign Key Reference                                              ║
+║                                                                            ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║                         RELATIONSHIP SUMMARY                               ║
+╠════════════════════════════════════════════════════════════════════════════╣
+║                                                                            ║
+║  ONE-TO-MANY RELATIONSHIPS:                                                ║
+║  ────────────────────────────────────────────────────────────────────────  ║
+║  1. Users        → Incidents   (one user can be assigned many incidents)  ║
+║  2. Users        → Comments    (one user can author many comments)        ║
+║  3. Users        → Activities  (one user can perform many activities)     ║
+║  4. Incidents    → Cases       (one incident can have many cases)         ║
+║  5. Incidents    → Comments    (one incident can have many comments)      ║
+║  6. Cases        → Comments    (one case can have many comments)          ║
+║  7. Cases        → Activities  (one case can have many activities)        ║
+║                                                                            ║
+║  MANY-TO-MANY RELATIONSHIPS:                                               ║
+║  ────────────────────────────────────────────────────────────────────────  ║
+║  1. Cases ↔ Users   (via case_assignments)                                ║
+║     - One case can have multiple assigned analysts                        ║
+║     - One analyst can be assigned to multiple cases                       ║
+║                                                                            ║
+║  2. Cases ↔ Alerts  (via case_alerts)                                     ║
+║     - One case can contain multiple alerts                                ║
+║     - One alert can be part of multiple cases                             ║
+║                                                                            ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║                         CASCADE DELETE RULES                               ║
+╠════════════════════════════════════════════════════════════════════════════╣
+║                                                                            ║
+║  When INCIDENT is deleted:                                                 ║
+║  → All related CASES are deleted (CASCADE)                                 ║
+║  → All related COMMENTS are deleted (CASCADE)                              ║
+║                                                                            ║
+║  When CASE is deleted:                                                     ║
+║  → All related COMMENTS are deleted (CASCADE)                              ║
+║  → All related ACTIVITIES are deleted (CASCADE)                            ║
+║  → All entries in CASE_ASSIGNMENTS are deleted                             ║
+║  → All entries in CASE_ALERTS are deleted                                  ║
+║                                                                            ║
+║  When USER is deleted:                                                     ║
+║  → Assigned incidents remain (assigned_to_id set to NULL)                 ║
+║  → Comments and activities remain (referential integrity)                 ║
+║                                                                            ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║                          INDEX STRATEGY                                    ║
+╠════════════════════════════════════════════════════════════════════════════╣
+║                                                                            ║
+║  HEAVILY INDEXED FIELDS (for performance):                                 ║
+║  ────────────────────────────────────────────────────────────────────────  ║
+║  • Foreign Keys         - All FK columns indexed                           ║
+║  • Status Fields        - incident.status, case.status, alert.status      ║
+║  • Severity/Priority    - For filtering critical items                     ║
+║  • Timestamps           - For time-based queries                           ║
+║  • IP Addresses         - For threat hunting (src_ip, dst_ip)             ║
+║  • Hostname/Agent       - For asset-based queries                          ║
+║  • Category/Event Type  - For alert classification                         ║
+║  • Username             - For user activity tracking                       ║
+║                                                                            ║
+║  UNIQUE CONSTRAINTS:                                                       ║
+║  ────────────────────────────────────────────────────────────────────────  ║
+║  • users.username       - Prevent duplicate usernames                      ║
+║  • users.email          - Prevent duplicate emails                         ║
+║  • alerts.source_id     - Prevent duplicate alert ingestion                ║
+║                                                                            ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║                     DATA FLOW EXAMPLE                                      ║
+╠════════════════════════════════════════════════════════════════════════════╣
+║                                                                            ║
+║  1. ALERT received from Wazuh                                              ║
+║     │                                                                      ║
+║     ├─► Normalized and stored in ALERTS table                             ║
+║     │                                                                      ║
+║     └─► Case Engine checks severity                                       ║
+║         │                                                                  ║
+║         ├─► If HIGH/CRITICAL:                                              ║
+║         │   │                                                              ║
+║         │   ├─► Check for related INCIDENT                                 ║
+║         │   │   ├─► Found: Link to existing INCIDENT                       ║
+║         │   │   └─► Not Found: Create new INCIDENT                         ║
+║         │   │                                                              ║
+║         │   ├─► Check for related CASE (by IP/hostname/category)          ║
+║         │   │   ├─► Found: Add alert to existing CASE                      ║
+║         │   │   └─► Not Found: Create new CASE                             ║
+║         │   │                                                              ║
+║         │   └─► Update CASE_ALERTS join table                              ║
+║         │                                                                  ║
+║         └─► ANALYST assigned to CASE                                       ║
+║             │                                                              ║
+║             ├─► Analyst reviews ALERTS in CASE                             ║
+║             ├─► Adds COMMENTS with findings                                ║
+║             ├─► ACTIVITIES logged automatically                            ║
+║             └─► Updates CASE status → RESOLVED                             ║
+║                 │                                                          ║
+║                 └─► INCIDENT marked as RESOLVED                            ║
+║                                                                            ║
+╚════════════════════════════════════════════════════════════════════════════╝
