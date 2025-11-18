@@ -16,7 +16,7 @@ The Hubsec SOC Platform now includes an enhanced **multi-tenant schema** designe
 
 2. **`scripts/init_db_multitenant.py`**
    - PostgreSQL initialization script
-   - Seeds 3 sample tenants (Econet, PostBank, TelOne)
+   - Seeds 3 sample tenants (Net, Bank, TelOne)
    - Creates multi-tenant data with proper relationships
    - Validates PostgreSQL before execution
 
@@ -36,7 +36,7 @@ The Hubsec SOC Platform now includes an enhanced **multi-tenant schema** designe
 ## Key Features
 
 ### ✓ Multi-Tenancy
-- **Tenant Model**: Organizations (Econet, PostBank, TelOne, etc.)
+- **Tenant Model**: Organizations (Net, Bank, TelOne, etc.)
 - **Data Isolation**: All security entities have `tenant_id` foreign key
 - **Multi-Tenant RBAC**: Users can access multiple tenants via `user_tenants` join table
 - **Tenant Roles**: Global roles (super_admin, hubsec_analyst) + tenant-specific roles
@@ -227,9 +227,9 @@ To use the multi-tenant models in your API:
 
 | Tenant | Code | Industry | Subscription |
 |--------|------|----------|--------------|
-| Econet Wireless Zimbabwe | ECONET | Telecommunications | Enterprise |
-| PostBank Zimbabwe | POSTBANK | Banking | Professional |
-| TelOne Zimbabwe | TELONE | Telecommunications | Enterprise |
+| Wireless | NET | Telecommunications | Enterprise |
+| Bank | BANK | Banking | Professional |
+| TelOne | TELONE | Telecommunications | Enterprise |
 
 ### Users Created
 
@@ -239,27 +239,27 @@ To use the multi-tenant models in your API:
 - `hubsec_analyst2` / `analyst123` - SOC Analyst
 
 **Tenant Users (Single Tenant Access):**
-- `econet_admin` / `econet123` - Econet Admin
-- `econet_analyst` / `econet123` - Econet Analyst
-- `postbank_admin` / `postbank123` - PostBank Admin
+- `net_admin` / `net123` - Net Admin
+- `net_analys` / `net123` - Net Analyst
+- `bank_admin` / `bank123` - Bank Admin
 - `telone_viewer` / `telone123` - TelOne Viewer
 
 ### Source Systems Created
 
-- Econet Wazuh Manager
-- Econet IRIS
-- PostBank Wazuh
-- PostBank Jira
+- Net Wazuh Manager
+- Net IRIS
+- Bank Wazuh
+- Bank Jira
 - TelOne Wazuh
 
 ### Sample Data Generated
 
 - **50 Alerts** across all tenants
 - **4 Assets** (servers, databases, network devices)
-- **2 Incidents** (Econet ransomware, PostBank brute force)
+- **2 Incidents** (Net ransomware, Bank brute force)
 - **2 Cases** with assigned analysts
 - **2 External References** (IRIS-2024-0001, SEC-123)
-- **2 Playbooks** (global ransomware, PostBank-specific)
+- **2 Playbooks** (global ransomware, Bank-specific)
 - **Comments and Activities** for collaboration
 
 ---
