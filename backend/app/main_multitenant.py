@@ -12,7 +12,7 @@ import os
 
 from backend.app.models.models_multitenant import Base
 from backend.app.database_multitenant import engine, get_db, DATABASE_URL, test_connection, enable_uuid_extension
-from backend.app.api.v1 import tenants
+from backend.app.api.v1 import tenants, source_systems, assets, playbooks
 
 # Test database connection and enable UUID extension
 print("=" * 70)
@@ -58,6 +58,9 @@ app.add_middleware(
 
 # Include routers
 app.include_router(tenants.router, prefix="/api/v1")
+app.include_router(source_systems.router, prefix="/api/v1")
+app.include_router(assets.router, prefix="/api/v1")
+app.include_router(playbooks.router, prefix="/api/v1")
 
 # TODO: Include updated routers for alerts, incidents, cases, users
 # These need to be updated to support tenant filtering
@@ -87,7 +90,11 @@ async def root():
         "docs": "/api/docs",
         "endpoints": {
             "tenants": "/api/v1/tenants",
+            "source_systems": "/api/v1/source-systems",
+            "assets": "/api/v1/assets",
+            "playbooks": "/api/v1/playbooks",
             "health": "/health",
+            "database_info": "/api/v1/info/database"
         },
         "authentication": {
             "method": "header-based (testing)",
