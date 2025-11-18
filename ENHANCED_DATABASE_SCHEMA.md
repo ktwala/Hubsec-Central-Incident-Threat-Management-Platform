@@ -4,7 +4,7 @@
 
 This is the **production-ready multi-tenant schema** for Hubsec's central incident and threat management platform, supporting:
 
-- ✅ **Multiple clients/tenants** (Econet, PostBank, TelOne, etc.)
+- ✅ **Multiple clients/tenants** (Net, Bank, TelOne, etc.)
 - ✅ **Multiple integrations** (Wazuh, IRIS, Jira, firewalls, EDR)
 - ✅ **Playbooks & automation**
 - ✅ **Asset tracking & context**
@@ -25,7 +25,7 @@ This is the **production-ready multi-tenant schema** for Hubsec's central incide
 ├────────────────────────┤
 │ PK  id                 │  UUID
 │     name               │  TEXT
-│     code               │  TEXT (e.g. "ECONET", "POSTBANK")
+│     code               │  TEXT (e.g. "NET", "BANK")
 │     industry           │  TEXT
 │     region             │  TEXT
 │     is_active          │  BOOLEAN
@@ -269,7 +269,7 @@ This is the **production-ready multi-tenant schema** for Hubsec's central incide
 CREATE TABLE tenants (
     id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name                TEXT NOT NULL UNIQUE,
-    code                TEXT NOT NULL UNIQUE,  -- "ECONET", "POSTBANK"
+    code                TEXT NOT NULL UNIQUE,  -- "NET", "BANK"
     industry            TEXT,
     region              TEXT,
     is_active           BOOLEAN DEFAULT true,
