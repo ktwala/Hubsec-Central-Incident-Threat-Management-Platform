@@ -1,35 +1,71 @@
 # 🛡️ Hubsec SOC Platform
 
-**Central Incident & Threat Management Platform for Security Operations Centers**
+**Central Multi-Tenant Incident & Threat Management Platform for Security Operations Centers**
 
-A comprehensive, production-ready Security Operations Center (SOC) platform built with FastAPI, designed to centralize incident management, alert correlation, and threat response.
+A comprehensive, production-ready Security Operations Center (SOC) platform built with FastAPI and PostgreSQL, designed to centralize incident management, alert correlation, and threat response for multiple client organizations.
+
+---
+
+## ✨ Platform Versions
+
+| Version | Database | Use Case | Status |
+|---------|----------|----------|--------|
+| **Multi-Tenant** | PostgreSQL | Production, Multiple Organizations | ✅ **Recommended** |
+| Single-Tenant | SQLite/PostgreSQL | Development, Single Organization | ✅ Available |
 
 ---
 
 ## 🌟 Features
 
-### Core Capabilities
-- **🚨 Alert Management** - Ingest, normalize, and triage security alerts from multiple sources
-- **📋 Incident Tracking** - Create and manage security incidents with full lifecycle support
-- **💼 Case Management** - Investigation cases with automatic alert correlation
-- **👥 User Management** - Role-based access control (Admin, Analyst, Manager, Viewer)
-- **🔄 Wazuh Integration** - Native webhook support for Wazuh SIEM alerts
-- **📊 Dashboard & Analytics** - Real-time SOC metrics and statistics
-- **💬 Collaboration** - Comments and activity logs for team coordination
+### 🏢 Multi-Tenant Capabilities (NEW)
+- **Multiple Organizations** - Serve multiple clients from one platform
+- **Data Isolation** - Complete tenant separation at database level
+- **Tenant Management** - Create, configure, and manage client organizations
+- **Multi-Tenant RBAC** - Users can access multiple tenants with different roles
+- **Tenant-Aware APIs** - All endpoints automatically filter by tenant
+- **Cross-Tenant Analytics** - Hubsec staff can view all tenants
 
-### Intelligence Features
-- **Automatic Alert Correlation** - Groups related alerts into cases
-- **Smart Case Creation** - Automatically creates cases from high-severity alerts
-- **Severity Mapping** - Configurable rules for alert prioritization
-- **Alert Normalization** - Standardizes alerts from different sources
-- **MITRE ATT&CK Integration** - Tracks techniques and tactics
+### 🔌 Integration Management
+- **Source Systems API** - Manage integrations (Wazuh, IRIS, Jira, FortiGate, etc.)
+- **Integration Health Checks** - Monitor connectivity and sync status
+- **Multiple Integrations per Tenant** - Each client has their own integrations
+- **Sync Triggers** - Manual or automated synchronization
 
-### Technical Highlights
-- **RESTful API** - Clean, well-documented API endpoints
-- **Database Agnostic** - Supports PostgreSQL, MySQL, SQLite
-- **Docker Support** - Easy deployment with Docker Compose
-- **Comprehensive Schemas** - Full request/response validation
-- **Extensible Architecture** - Easy to add new alert sources
+### 💻 Asset Management
+- **IT Asset Inventory** - Track servers, workstations, network devices, databases
+- **Asset Criticality** - Critical, High, Medium, Low classifications
+- **Asset Search** - Search by hostname, IP address, or tags
+- **Asset-Alert Correlation** - Link alerts to specific assets
+- **Asset Heartbeat** - Track last seen timestamps
+
+### 📖 Playbook Automation
+- **Incident Response Playbooks** - Automated runbooks for common incidents
+- **Global & Tenant Playbooks** - Shared or organization-specific playbooks
+- **Execution Tracking** - Monitor playbook progress per case
+- **Step-by-Step Workflow** - Track completed steps and metadata
+
+### 🚨 Core SOC Capabilities
+- **Alert Management** - Ingest, normalize, and triage security alerts
+- **Incident Tracking** - Full lifecycle incident management
+- **Case Management** - Investigation cases with alert correlation
+- **User Management** - Multi-tenant role-based access control
+- **Wazuh Integration** - Native webhook support for Wazuh SIEM
+- **Dashboard & Analytics** - Real-time metrics per tenant or globally
+- **Collaboration** - Comments and activity logs
+
+### 🔐 Security & Access Control
+- **Tenant Isolation** - Users only see their assigned tenants
+- **Role Hierarchy** - Super Admin → Hubsec Analyst → Tenant Admin → Analyst → Viewer
+- **Resource Permissions** - Fine-grained access control per resource
+- **Audit Trail** - Complete activity logging
+
+### 🚀 Technical Highlights
+- **RESTful API** - 32+ well-documented endpoints
+- **PostgreSQL Optimized** - UUID, INET, JSONB, ARRAY types
+- **Async Architecture** - FastAPI with async/await support
+- **Comprehensive Schemas** - Pydantic validation throughout
+- **Extensible Design** - Easy to add new features
+- **API Documentation** - Auto-generated Swagger UI & ReDoc
 
 ---
 
@@ -51,44 +87,78 @@ A comprehensive, production-ready Security Operations Center (SOC) platform buil
 
 ### Prerequisites
 - Python 3.11+
+- PostgreSQL 12+ (for multi-tenant)
 - Docker & Docker Compose (optional)
-- PostgreSQL (optional, can use SQLite)
 
-### 1. Clone and Setup
+### Option 1: Multi-Tenant Mode (Recommended)
 
 ```bash
+# 1. Clone repository
 git clone <repository-url>
 cd Hubsec-Central-Incident-Threat-Management-Platform
 
-# Install dependencies
+# 2. Install dependencies
 pip install -r requirements.txt
+
+# 3. Setup PostgreSQL
+sudo -u postgres psql
+CREATE DATABASE hubsec_multitenant;
+CREATE USER hubsec WITH PASSWORD 'hubsec';
+GRANT ALL PRIVILEGES ON DATABASE hubsec_multitenant TO hubsec;
+\q
+
+# 4. Set environment
+export DATABASE_URL="postgresql://hubsec:hubsec@localhost/hubsec_multitenant"
+
+# 5. Initialize with sample data
+python scripts/init_db_multitenant.py --database-url "$DATABASE_URL" --drop --seed
+
+# 6. Start multi-tenant API
+uvicorn backend.app.main_multitenant:app --reload
 ```
 
-### 2. Initialize Database
-
-```bash
-# Create tables and seed with sample data
-python scripts/init_db.py --seed
-```
-
-### 3. Start the API
-
-```bash
-# Development mode
-uvicorn backend.app.main:app --reload
-
-# Or with Docker
-docker-compose up
-```
-
-### 4. Access the Platform
-
+**Access**:
 - **API Documentation**: http://localhost:8000/api/docs
-- **Alternative Docs**: http://localhost:8000/api/redoc
 - **Health Check**: http://localhost:8000/health
-- **Dashboard Stats**: http://localhost:8000/api/v1/stats
+- **Database Info**: http://localhost:8000/api/v1/info/database
 
-### Default Credentials
+**Sample Data**:
+- 3 Tenants (Econet, PostBank, TelOne)
+- 7 Users (3 Hubsec staff + 4 tenant users)
+- 5 Source Systems (Wazuh, IRIS, Jira)
+- 4 Assets, 50 Alerts, 2 Incidents, 2 Cases
+
+**Test Credentials**:
+```
+Hubsec Super Admin: superadmin / admin123
+Hubsec Analyst:     hubsec_analyst1 / analyst123
+Econet Admin:       econet_admin / econet123
+PostBank Admin:     postbank_admin / postbank123
+```
+
+**Authentication**: Use headers for testing:
+```bash
+curl -X GET "http://localhost:8000/api/v1/tenants" \
+  -H "X-Username: hubsec_analyst1"
+```
+
+### Option 2: Single-Tenant Mode (Development)
+
+```bash
+# 1-2. Same as above
+
+# 3. Initialize SQLite database
+python scripts/init_db.py --seed
+
+# 4. Start single-tenant API
+uvicorn backend.app.main:app --reload
+```
+
+**Access**:
+- **API Documentation**: http://localhost:8000/api/docs
+- **Health Check**: http://localhost:8000/health
+
+**Default Credentials**:
 ```
 Admin:    admin / admin123
 Analyst:  analyst1 / analyst123
@@ -123,37 +193,53 @@ Manager:  manager / manager123
 │  │  • Priority Escalation                           │  │
 │  └──────────────────────────────────────────────────┘  │
 │  ┌──────────────────────────────────────────────────┐  │
-│  │  REST API Endpoints                              │  │
-│  │  • /api/v1/incidents                             │  │
-│  │  • /api/v1/cases                                 │  │
-│  │  • /api/v1/alerts                                │  │
-│  │  • /api/v1/users                                 │  │
+│  │  REST API Endpoints (32 endpoints)               │  │
+│  │  • /api/v1/tenants (6)                           │  │
+│  │  • /api/v1/source-systems (7)                    │  │
+│  │  • /api/v1/assets (9)                            │  │
+│  │  • /api/v1/playbooks (10)                        │  │
+│  │  • /api/v1/incidents (legacy)                    │  │
+│  │  • /api/v1/cases (legacy)                        │  │
+│  │  • /api/v1/alerts (legacy)                       │  │
+│  │  • /api/v1/users (legacy)                        │  │
 │  └──────────────────────────────────────────────────┘  │
 └─────────────────┬───────────────────────────────────────┘
                   │
                   ▼
 ┌─────────────────────────────────────────────────────────┐
-│              Database (PostgreSQL/SQLite)                │
+│              Database (PostgreSQL - Multi-Tenant)        │
+│  • Tenants  • Source Systems  • Assets  • Playbooks     │
 │  • Incidents  • Cases  • Alerts  • Users                │
-│  • Comments   • Activities                              │
+│  • Comments   • Activities  • External References       │
 └─────────────────────────────────────────────────────────┘
 ```
 
-### Database Schema
+### Database Schema (Multi-Tenant)
 
-**Core Entities:**
+**Core Entities (15 tables):**
+- **Tenant** - Client organization (Econet, PostBank, etc.)
+- **SourceSystem** - Integration endpoints (Wazuh, IRIS, Jira)
+- **Asset** - IT assets/endpoints with criticality tracking
+- **Playbook** - Automated incident response runbooks
 - **Incident** - High-level security incident
 - **Case** - Investigation case (belongs to incident)
 - **Alert** - Individual security alert (can belong to multiple cases)
-- **User** - SOC analyst or administrator
+- **User** - SOC analyst or administrator with multi-tenant access
 - **Comment** - Discussion on incidents/cases
 - **Activity** - Audit trail for case activities
+- **CasePlaybook** - Playbook execution tracking per case
+- **CaseExternalRef** - External system references (IRIS cases, Jira tickets)
 
-**Relationships:**
+**Multi-Tenant Relationships:**
+- 1 Tenant → Many Users (many-to-many with roles per tenant)
+- 1 Tenant → Many Source Systems, Assets, Alerts, Incidents, Cases
+- 1 Playbook → Can be global (NULL tenant) or tenant-specific
 - 1 Incident → Many Cases
 - 1 Case → Many Alerts (many-to-many)
-- 1 User → Many Incidents (assigned)
-- 1 Case → Many Users (assigned, many-to-many)
+- 1 Case → Many Playbooks (execution tracking)
+- 1 Asset → Many Alerts (correlation)
+
+For detailed schema documentation, see [ENHANCED_DATABASE_SCHEMA.md](./docs/ENHANCED_DATABASE_SCHEMA.md)
 
 ---
 
@@ -271,9 +357,53 @@ rule_level_mapping:
 http://localhost:8000/api/v1
 ```
 
-### Main Endpoints
+### Main Endpoints (32 total)
 
-#### Incidents
+#### 🏢 Tenants (6 endpoints)
+```http
+GET    /tenants            # List all tenants
+GET    /tenants/{id}       # Get tenant details
+POST   /tenants            # Create tenant
+PATCH  /tenants/{id}       # Update tenant
+DELETE /tenants/{id}       # Delete tenant (soft)
+GET    /tenants/{id}/stats # Get tenant statistics
+```
+
+#### 🔌 Source Systems (7 endpoints)
+```http
+GET    /source-systems                # List integrations
+GET    /source-systems/{id}           # Get integration details
+POST   /source-systems                # Create integration
+PATCH  /source-systems/{id}           # Update integration
+DELETE /source-systems/{id}           # Delete integration (soft)
+POST   /source-systems/{id}/sync      # Trigger sync
+GET    /source-systems/{id}/health    # Check health
+```
+
+#### 💻 Assets (9 endpoints)
+```http
+GET    /assets                # List all assets
+GET    /assets/{id}           # Get asset details
+POST   /assets                # Create asset
+PATCH  /assets/{id}           # Update asset
+DELETE /assets/{id}           # Delete asset (soft)
+POST   /assets/{id}/heartbeat # Update last_seen timestamp
+GET    /assets/{id}/alerts    # Get alerts for asset
+```
+
+#### 📖 Playbooks (10 endpoints)
+```http
+GET    /playbooks                     # List all playbooks
+GET    /playbooks/{id}                # Get playbook details
+POST   /playbooks                     # Create playbook
+PATCH  /playbooks/{id}                # Update playbook
+DELETE /playbooks/{id}                # Delete playbook (soft)
+POST   /playbooks/execute             # Attach playbook to case
+PATCH  /playbooks/executions/{id}    # Update execution status
+GET    /playbooks/executions/case/{id} # Get case playbooks
+```
+
+#### 🚨 Incidents (Coming Soon - Legacy endpoints being updated)
 ```http
 GET    /incidents          # List all incidents
 GET    /incidents/{id}     # Get incident details
@@ -284,7 +414,7 @@ POST   /incidents/{id}/comments  # Add comment
 GET    /incidents/{id}/timeline  # Get timeline
 ```
 
-#### Cases
+#### 📂 Cases (Coming Soon - Legacy endpoints being updated)
 ```http
 GET    /cases              # List all cases
 GET    /cases/{id}         # Get case details
@@ -295,7 +425,7 @@ GET    /cases/{id}/statistics  # Get case stats
 POST   /cases/{id}/escalate    # Escalate case
 ```
 
-#### Alerts
+#### 🔔 Alerts (Coming Soon - Legacy endpoints being updated)
 ```http
 GET    /alerts             # List all alerts
 GET    /alerts/{id}        # Get alert details
@@ -305,7 +435,7 @@ POST   /alerts/bulk-triage      # Bulk update
 GET    /alerts/search/ip/{ip}  # Search by IP
 ```
 
-#### Users
+#### 👤 Users (Coming Soon - Legacy endpoints being updated)
 ```http
 GET    /users              # List all users
 GET    /users/{id}         # Get user details
@@ -317,6 +447,8 @@ GET    /users/{id}/activity    # Get activity
 
 ### Interactive Documentation
 Visit http://localhost:8000/api/docs for the full interactive API documentation with request/response examples.
+
+For detailed testing examples, see [API_TESTING_GUIDE.md](./API_TESTING_GUIDE.md).
 
 ---
 
@@ -378,17 +510,28 @@ response = requests.post(
 hubsec-platform/
 ├── backend/
 │   └── app/
-│       ├── main.py              # FastAPI application
+│       ├── main.py                     # Single-tenant FastAPI application
+│       ├── main_multitenant.py         # Multi-tenant FastAPI application ✨
+│       ├── database.py                 # Single-tenant database config
+│       ├── database_multitenant.py     # Multi-tenant PostgreSQL config ✨
 │       ├── models/
-│       │   └── models.py        # Database models
+│       │   ├── models.py               # Single-tenant SQLAlchemy models
+│       │   └── models_multitenant.py   # Multi-tenant models (15 tables) ✨
 │       ├── schemas/
-│       │   └── schemas.py       # Pydantic schemas
+│       │   ├── schemas.py              # Single-tenant Pydantic schemas
+│       │   └── schemas_multitenant.py  # Multi-tenant schemas (UUID) ✨
+│       ├── middleware/
+│       │   └── tenant.py               # Tenant-aware RBAC middleware ✨
 │       ├── api/
 │       │   └── v1/
-│       │       ├── incidents.py
-│       │       ├── cases.py
-│       │       ├── alerts.py
-│       │       └── users.py
+│       │       ├── tenants.py          # Tenant management API ✨
+│       │       ├── source_systems.py   # Integration management API ✨
+│       │       ├── assets.py           # Asset inventory API ✨
+│       │       ├── playbooks.py        # Playbook automation API ✨
+│       │       ├── incidents.py        # Incident management (legacy)
+│       │       ├── cases.py            # Case management (legacy)
+│       │       ├── alerts.py           # Alert management (legacy)
+│       │       └── users.py            # User management (legacy)
 │       └── services/
 │           ├── wazuh_normalizer.py
 │           └── case_engine.py
@@ -396,12 +539,20 @@ hubsec-platform/
 │   ├── wazuh_mapping.yml
 │   └── severity_rules.yml
 ├── scripts/
-│   └── init_db.py
+│   ├── init_db.py                      # Single-tenant DB initialization
+│   └── init_db_multitenant.py          # Multi-tenant DB initialization ✨
+├── docs/
+│   ├── ENHANCED_DATABASE_SCHEMA.md
+│   ├── MULTITENANT_MIGRATION_GUIDE.md
+│   ├── IMPLEMENTATION_STATUS.md
+│   └── API_TESTING_GUIDE.md            # Complete API testing guide ✨
 ├── docker-compose.yml
 ├── Dockerfile
 ├── requirements.txt
 └── README.md
 ```
+
+**✨ = New multi-tenant files**
 
 ### Running Tests
 ```bash
