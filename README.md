@@ -357,7 +357,7 @@ rule_level_mapping:
 http://localhost:8000/api/v1
 ```
 
-### Main Endpoints (32 total)
+### Main Endpoints (76 total)
 
 #### 🏢 Tenants (6 endpoints)
 ```http
@@ -403,46 +403,64 @@ PATCH  /playbooks/executions/{id}    # Update execution status
 GET    /playbooks/executions/case/{id} # Get case playbooks
 ```
 
-#### 🚨 Incidents (Coming Soon - Legacy endpoints being updated)
+#### 🚨 Incidents (8 endpoints)
 ```http
-GET    /incidents          # List all incidents
-GET    /incidents/{id}     # Get incident details
-POST   /incidents          # Create incident
-PUT    /incidents/{id}     # Update incident
-DELETE /incidents/{id}     # Delete incident
-POST   /incidents/{id}/comments  # Add comment
-GET    /incidents/{id}/timeline  # Get timeline
+GET    /incidents                   # List incidents (tenant-filtered)
+POST   /incidents                   # Create incident
+GET    /incidents/{id}              # Get incident details
+PATCH  /incidents/{id}              # Update incident
+DELETE /incidents/{id}              # Soft delete
+POST   /incidents/{id}/comments     # Add comment
+GET    /incidents/{id}/timeline     # Get event timeline
+GET    /incidents/{id}/statistics   # Get statistics
 ```
 
-#### 📂 Cases (Coming Soon - Legacy endpoints being updated)
+#### 📂 Cases (14 endpoints)
 ```http
-GET    /cases              # List all cases
-GET    /cases/{id}         # Get case details
-POST   /cases              # Create case
-PUT    /cases/{id}         # Update case
-POST   /cases/{id}/alerts  # Add alerts to case
-GET    /cases/{id}/statistics  # Get case stats
-POST   /cases/{id}/escalate    # Escalate case
+GET    /cases                          # List cases (tenant-filtered)
+POST   /cases                          # Create case
+GET    /cases/{id}                     # Get case details
+PATCH  /cases/{id}                     # Update case
+DELETE /cases/{id}                     # Soft delete
+POST   /cases/{id}/alerts              # Add alerts to case
+DELETE /cases/{id}/alerts/{alert_id}   # Remove alert
+POST   /cases/{id}/comments            # Add comment
+GET    /cases/{id}/statistics          # Get statistics
+POST   /cases/{id}/escalate            # Escalate case
+POST   /cases/{id}/playbooks/{id}/attach  # Attach playbook
+GET    /cases/{id}/playbooks           # List case playbooks
+POST   /cases/{id}/external-refs       # Create external reference
+GET    /cases/{id}/external-refs       # List external references
 ```
 
-#### 🔔 Alerts (Coming Soon - Legacy endpoints being updated)
+#### 🔔 Alerts (9 endpoints)
 ```http
-GET    /alerts             # List all alerts
-GET    /alerts/{id}        # Get alert details
-POST   /alerts             # Create alert
-POST   /alerts/wazuh/webhook   # Wazuh webhook
-POST   /alerts/bulk-triage      # Bulk update
-GET    /alerts/search/ip/{ip}  # Search by IP
+GET    /alerts                   # List alerts (tenant-filtered)
+POST   /alerts                   # Create alert
+GET    /alerts/{id}              # Get alert details
+PATCH  /alerts/{id}              # Update alert
+DELETE /alerts/{id}              # Soft delete
+POST   /alerts/wazuh/webhook     # Wazuh integration endpoint
+POST   /alerts/bulk-triage       # Bulk status update
+GET    /alerts/search/ip/{ip}    # Search by IP address
+GET    /alerts/search/hostname/{hostname}  # Search by hostname
 ```
 
-#### 👤 Users (Coming Soon - Legacy endpoints being updated)
+#### 👤 Users (13 endpoints)
 ```http
-GET    /users              # List all users
-GET    /users/{id}         # Get user details
-POST   /users              # Create user
-PUT    /users/{id}         # Update user
-GET    /users/{id}/workload    # Get workload
-GET    /users/{id}/activity    # Get activity
+GET    /users                          # List users (tenant-filtered)
+POST   /users                          # Create user
+GET    /users/{id}                     # Get user details
+GET    /users/username/{username}      # Get by username
+PATCH  /users/{id}                     # Update user
+DELETE /users/{id}                     # Soft delete
+POST   /users/{id}/activate            # Activate user
+POST   /users/{id}/deactivate          # Deactivate user
+POST   /users/{id}/tenants/{id}/assign # Assign to tenant
+DELETE /users/{id}/tenants/{id}/unassign # Unassign from tenant
+GET    /users/{id}/tenants             # Get user tenants
+GET    /users/{id}/workload            # Get workload statistics
+GET    /users/{id}/activity            # Get activity log
 ```
 
 ### Interactive Documentation
