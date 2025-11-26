@@ -87,6 +87,32 @@ class PlaybookStatus(str, Enum):
     CANCELLED = "cancelled"
 
 
+class IOCType(str, Enum):
+    IP = "ip"
+    DOMAIN = "domain"
+    URL = "url"
+    FILE_HASH = "file_hash"
+    EMAIL = "email"
+    REGISTRY_KEY = "registry_key"
+    MUTEX = "mutex"
+    USER_AGENT = "user_agent"
+    OTHER = "other"
+
+
+class TIFeedType(str, Enum):
+    API = "api"
+    FILE = "file"
+    WEBHOOK = "webhook"
+
+
+class TIFeedAuthType(str, Enum):
+    NONE = "none"
+    API_KEY = "api_key"
+    BASIC = "basic"
+    BEARER = "bearer"
+    OAUTH = "oauth"
+
+
 # ============================================================================
 # TENANT SCHEMAS
 # ============================================================================
@@ -779,3 +805,174 @@ class TokenData(BaseModel):
     role: UserRole
     tenant_id: Optional[UUID] = None  # Current tenant context
     tenant_ids: List[UUID] = []  # All accessible tenants
+
+
+# ============================================================================
+# THREAT INTELLIGENCE SCHEMAS
+# ============================================================================
+
+# Threat Intel Feed Schemas
+class ThreatIntelFeedBase(BaseModel):
+    """Base threat intelligence feed schema"""
+    name: str = Field(..., min_length=3, max_length=255)
+    description: Optional[str] = None
+    feed_type: TIFeedType
+    api_url: Optional[str] = Field(None, max_length=500)
+    auth_type: TIFeedAuthType = TIFeedAuthType.NONE
+    api_key: Optional[str] = None
+    api_username: Optional[str] = Field(None, max_length=255)
+    api_password: Optional[str] = None
+    config: Optional[Dict[str, Any]] = None
+    sync_frequency: int = Field(3600, ge=60, le=86400)  # 1 min to 24 hours
+    is_enabled: bool = True
+    is_global: bool = False
+
+
+class ThreatIntelFeedCreate(ThreatIntelFeedBase):
+    """Schema for creating a threat intelligence feed"""
+    tenant_id: Optional[UUID] = None  # NULL = global feed
+
+
+class ThreatIntelFeedUpdate(BaseModel):
+    """Schema for updating a threat intelligence feed"""
+    name: Optional[str] = Field(None, min_length=3, max_length=255)
+    description: Optional[str] = None
+    feed_type: Optional[TIFeedType] = None
+    api_url: Optional[str] = Field(None, max_length=500)
+    auth_type: Optional[TIFeedAuthType] = None
+    api_key: Optional[str] = None
+    api_username: Optional[str] = Field(None, max_length=255)
+    api_password: Optional[str] = None
+    config: Optional[Dict[str, Any]] = None
+    sync_frequency: Optional[int] = Field(None, ge=60, le=86400)
+    is_enabled: Optional[bool] = None
+    is_global: Optional[bool] = None
+
+
+class ThreatIntelFeedInDB(ThreatIntelFeedBase):
+    """Schema for threat intelligence feed from database"""
+    id: UUID
+    tenant_id: Optional[UUID]
+    last_sync_at: Optional[datetime]
+    last_sync_status: Optional[str]
+    last_sync_error: Optional[str]
+    ioc_count: int
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ThreatIntelFeed(ThreatIntelFeedInDB):
+    """Full threat intelligence feed response"""
+    pass
+
+
+# Threat Intel IOC Schemas
+class ThreatIntelIOCBase(BaseModel):
+    """Base IOC schema"""
+    ioc_type: IOCType
+    value: str = Field(..., min_length=1, max_length=500)
+    severity: SeverityLevel
+    confidence: int = Field(50, ge=0, le=100)
+    threat_type: Optional[str] = Field(None, max_length=100)
+    threat_actor: Optional[str] = Field(None, max_length=255)
+    description: Optional[str] = None
+    tags: Optional[List[str]] = []
+    mitre_attack_ids: Optional[List[str]] = []
+    expiration_date: Optional[datetime] = None
+    meta_data: Optional[Dict[str, Any]] = None
+    source_ref: Optional[str] = Field(None, max_length=500)
+
+
+class ThreatIntelIOCCreate(ThreatIntelIOCBase):
+    """Schema for creating an IOC"""
+    tenant_id: Optional[UUID] = None  # NULL = global
+    feed_id: UUID
+
+
+class ThreatIntelIOCBulkCreate(BaseModel):
+    """Schema for bulk creating IOCs"""
+    feed_id: UUID
+    tenant_id: Optional[UUID] = None
+    iocs: List[ThreatIntelIOCBase]
+
+
+class ThreatIntelIOCUpdate(BaseModel):
+    """Schema for updating an IOC"""
+    ioc_type: Optional[IOCType] = None
+    value: Optional[str] = Field(None, min_length=1, max_length=500)
+    severity: Optional[SeverityLevel] = None
+    confidence: Optional[int] = Field(None, ge=0, le=100)
+    threat_type: Optional[str] = Field(None, max_length=100)
+    threat_actor: Optional[str] = Field(None, max_length=255)
+    description: Optional[str] = None
+    tags: Optional[List[str]] = None
+    mitre_attack_ids: Optional[List[str]] = None
+    expiration_date: Optional[datetime] = None
+    is_active: Optional[bool] = None
+    meta_data: Optional[Dict[str, Any]] = None
+    source_ref: Optional[str] = Field(None, max_length=500)
+
+
+class ThreatIntelIOCInDB(ThreatIntelIOCBase):
+    """Schema for IOC from database"""
+    id: UUID
+    tenant_id: Optional[UUID]
+    feed_id: UUID
+    first_seen: datetime
+    last_seen: datetime
+    is_active: bool
+    match_count: int
+    last_match_at: Optional[datetime]
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ThreatIntelIOC(ThreatIntelIOCInDB):
+    """Full IOC response"""
+    pass
+
+
+class IOCMatch(BaseModel):
+    """Schema for IOC match result"""
+    ioc_id: UUID
+    ioc_type: IOCType
+    value: str
+    severity: SeverityLevel
+    confidence: int
+    threat_type: Optional[str]
+    threat_actor: Optional[str]
+    description: Optional[str]
+    tags: Optional[List[str]]
+    mitre_attack_ids: Optional[List[str]]
+    matched_at: datetime
+
+
+class IOCSearchResult(BaseModel):
+    """Schema for IOC search results"""
+    query: str
+    query_type: IOCType
+    matches: List[ThreatIntelIOC]
+    match_count: int
+
+
+class ThreatIntelFeedSyncRequest(BaseModel):
+    """Schema for triggering a feed sync"""
+    feed_id: UUID
+    force: bool = False  # Force sync even if recently synced
+
+
+class ThreatIntelFeedSyncResponse(BaseModel):
+    """Schema for feed sync response"""
+    feed_id: UUID
+    status: str  # "started", "in_progress", "completed", "failed"
+    message: str
+    iocs_added: Optional[int] = None
+    iocs_updated: Optional[int] = None
+    iocs_expired: Optional[int] = None
+    sync_started_at: datetime
+    sync_completed_at: Optional[datetime] = None
+    error: Optional[str] = None

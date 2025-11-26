@@ -138,6 +138,35 @@ class PlaybookStatus(str, enum.Enum):
     CANCELLED = "cancelled"
 
 
+class IOCType(str, enum.Enum):
+    """Indicator of Compromise types"""
+    IP = "ip"
+    DOMAIN = "domain"
+    URL = "url"
+    FILE_HASH = "file_hash"
+    EMAIL = "email"
+    REGISTRY_KEY = "registry_key"
+    MUTEX = "mutex"
+    USER_AGENT = "user_agent"
+    OTHER = "other"
+
+
+class TIFeedType(str, enum.Enum):
+    """Threat Intelligence feed types"""
+    API = "api"
+    FILE = "file"
+    WEBHOOK = "webhook"
+
+
+class TIFeedAuthType(str, enum.Enum):
+    """Authentication types for TI feeds"""
+    NONE = "none"
+    API_KEY = "api_key"
+    BASIC = "basic"
+    BEARER = "bearer"
+    OAUTH = "oauth"
+
+
 # ============================================================================
 # CORE MULTI-TENANT MODELS
 # ============================================================================
@@ -177,6 +206,8 @@ class Tenant(Base):
     cases = relationship("Case", back_populates="tenant")
     assets = relationship("Asset", back_populates="tenant", cascade="all, delete-orphan")
     playbooks = relationship("Playbook", back_populates="tenant", cascade="all, delete-orphan")
+    threat_intel_feeds = relationship("ThreatIntelFeed", back_populates="tenant", cascade="all, delete-orphan")
+    threat_intel_iocs = relationship("ThreatIntelIOC", back_populates="tenant", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<Tenant(id={self.id}, code='{self.code}', name='{self.name}')>"
@@ -440,6 +471,10 @@ class Alert(Base):
     raw_data = Column(JSONB)        # Original alert
     normalized_data = Column(JSONB) # Processed/enriched data
 
+    # Threat Intelligence correlation
+    ioc_matches = Column(JSONB)     # IOC matches: [{"type": "ip", "value": "1.2.3.4", "severity": "high"}]
+    ti_matched = Column(Boolean, default=False, index=True)  # Quick lookup for TI-matched alerts
+
     # Relationships
     tenant = relationship("Tenant", back_populates="alerts")
     source_system = relationship("SourceSystem", back_populates="alerts")
@@ -626,3 +661,107 @@ class Activity(Base):
 
     def __repr__(self):
         return f"<Activity(id={self.id}, action='{self.action}', case_id={self.case_id})>"
+
+
+# ============================================================================
+# THREAT INTELLIGENCE
+# ============================================================================
+
+class ThreatIntelFeed(Base):
+    """
+    Threat Intelligence Feed sources (MISP, AlienVault OTX, Trellix, etc.)
+    Can be global (shared across tenants) or tenant-specific
+    """
+    __tablename__ = 'threat_intel_feeds'
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey('tenants.id'), nullable=True, index=True)  # NULL = global
+
+    # Feed details
+    name = Column(String(255), nullable=False)  # "MISP - Financial Threats", "AlienVault OTX"
+    description = Column(Text)
+    feed_type = Column(Enum(TIFeedType), nullable=False)  # api, file, webhook
+
+    # API configuration
+    api_url = Column(String(500))
+    auth_type = Column(Enum(TIFeedAuthType), default=TIFeedAuthType.NONE)
+    api_key = Column(Text)  # Encrypted in production
+    api_username = Column(String(255))
+    api_password = Column(Text)  # Encrypted in production
+
+    # Configuration
+    config = Column(JSONB)  # Feed-specific config (filters, tags, etc.)
+    sync_frequency = Column(Integer, default=3600)  # Seconds between syncs (default: 1 hour)
+
+    # Status tracking
+    is_enabled = Column(Boolean, default=True, index=True)
+    is_global = Column(Boolean, default=False, index=True)  # Global vs tenant-specific
+    last_sync_at = Column(TIMESTAMP(timezone=True))
+    last_sync_status = Column(String(50))  # "success", "failed", "in_progress"
+    last_sync_error = Column(Text)
+    ioc_count = Column(Integer, default=0)  # Number of active IOCs from this feed
+
+    # Timestamps
+    created_at = Column(TIMESTAMP(timezone=True), default=datetime.utcnow)
+    updated_at = Column(TIMESTAMP(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    tenant = relationship("Tenant", back_populates="threat_intel_feeds")
+    iocs = relationship("ThreatIntelIOC", back_populates="feed", cascade="all, delete-orphan")
+
+    def __repr__(self):
+        global_indicator = "GLOBAL" if self.is_global else f"tenant={self.tenant_id}"
+        return f"<ThreatIntelFeed(id={self.id}, name='{self.name}', {global_indicator})>"
+
+
+class ThreatIntelIOC(Base):
+    """
+    Indicators of Compromise from threat intelligence feeds
+    Used for alert enrichment and correlation
+    """
+    __tablename__ = 'threat_intel_iocs'
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey('tenants.id'), nullable=True, index=True)  # NULL = global
+    feed_id = Column(UUID(as_uuid=True), ForeignKey('threat_intel_feeds.id'), nullable=False, index=True)
+
+    # IOC details
+    ioc_type = Column(Enum(IOCType), nullable=False, index=True)  # ip, domain, hash, etc.
+    value = Column(String(500), nullable=False, index=True)  # The actual indicator
+
+    # Threat metadata
+    severity = Column(Enum(SeverityLevel), nullable=False, index=True)
+    confidence = Column(Integer, default=50)  # 0-100 confidence score
+    threat_type = Column(String(100), index=True)  # "malware", "phishing", "c2", "exploit"
+    threat_actor = Column(String(255))  # APT group, campaign name
+
+    # Context
+    description = Column(Text)
+    tags = Column(ARRAY(Text))  # ["apt28", "ransomware", "credential-theft"]
+    mitre_attack_ids = Column(ARRAY(Text))  # ["T1566", "T1059"] MITRE ATT&CK techniques
+
+    # Validity
+    first_seen = Column(TIMESTAMP(timezone=True), nullable=False, default=datetime.utcnow, index=True)
+    last_seen = Column(TIMESTAMP(timezone=True), nullable=False, default=datetime.utcnow)
+    expiration_date = Column(TIMESTAMP(timezone=True), index=True)  # When IOC expires
+    is_active = Column(Boolean, default=True, index=True)
+
+    # Metadata
+    meta_data = Column(JSONB)  # Additional context from feed
+    source_ref = Column(String(500))  # Reference URL or ID in source feed
+
+    # Match statistics
+    match_count = Column(Integer, default=0)  # How many alerts matched this IOC
+    last_match_at = Column(TIMESTAMP(timezone=True))  # Last time it matched an alert
+
+    # Timestamps
+    created_at = Column(TIMESTAMP(timezone=True), default=datetime.utcnow)
+    updated_at = Column(TIMESTAMP(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    tenant = relationship("Tenant", back_populates="threat_intel_iocs")
+    feed = relationship("ThreatIntelFeed", back_populates="iocs")
+
+    def __repr__(self):
+        global_indicator = "GLOBAL" if not self.tenant_id else f"tenant={self.tenant_id}"
+        return f"<ThreatIntelIOC(id={self.id}, type='{self.ioc_type}', value='{self.value[:30]}...', {global_indicator})>"
