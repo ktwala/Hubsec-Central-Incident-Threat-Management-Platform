@@ -12,7 +12,7 @@ import os
 
 from backend.app.models.models_multitenant import Base
 from backend.app.database_multitenant import engine, get_db, DATABASE_URL, test_connection, enable_uuid_extension
-from backend.app.api.v1 import tenants, source_systems, assets, playbooks
+from backend.app.api.v1 import tenants, source_systems, assets, playbooks, threat_intel, reports
 
 # Test database connection and enable UUID extension
 print("=" * 70)
@@ -61,6 +61,8 @@ app.include_router(tenants.router, prefix="/api/v1")
 app.include_router(source_systems.router, prefix="/api/v1")
 app.include_router(assets.router, prefix="/api/v1")
 app.include_router(playbooks.router, prefix="/api/v1")
+app.include_router(threat_intel.router, prefix="/api/v1")  # NEW: Threat Intelligence
+app.include_router(reports.router, prefix="/api/v1")       # NEW: Compliance Reports
 
 # TODO: Include updated routers for alerts, incidents, cases, users
 # These need to be updated to support tenant filtering
@@ -84,6 +86,9 @@ async def root():
             "Source system integrations (Wazuh, IRIS, Jira)",
             "Asset management",
             "Playbook automation",
+            "Threat intelligence integration (NEW)",
+            "Compliance reporting (PCI DSS, GDPR, POPIA) (NEW)",
+            "IOC correlation and enrichment (NEW)",
             "UUID primary keys",
             "PostgreSQL-optimized (INET, JSONB, ARRAY)"
         ],
@@ -93,6 +98,9 @@ async def root():
             "source_systems": "/api/v1/source-systems",
             "assets": "/api/v1/assets",
             "playbooks": "/api/v1/playbooks",
+            "threat_intel_feeds": "/api/v1/threat-intel/feeds",
+            "threat_intel_iocs": "/api/v1/threat-intel/iocs",
+            "compliance_reports": "/api/v1/reports/{tenant_id}/{report_type}",
             "health": "/health",
             "database_info": "/api/v1/info/database"
         },
@@ -146,7 +154,8 @@ async def health_check(db: Session = Depends(get_db)):
 async def database_info(db: Session = Depends(get_db)):
     """Get database information and table counts"""
     from backend.app.models.models_multitenant import (
-        Tenant, User, SourceSystem, Asset, Alert, Incident, Case, Playbook
+        Tenant, User, SourceSystem, Asset, Alert, Incident, Case, Playbook,
+        ThreatIntelFeed, ThreatIntelIOC
     )
 
     try:
@@ -161,6 +170,8 @@ async def database_info(db: Session = Depends(get_db)):
                 "incidents": db.query(Incident).count(),
                 "cases": db.query(Case).count(),
                 "playbooks": db.query(Playbook).count(),
+                "threat_intel_feeds": db.query(ThreatIntelFeed).count(),
+                "threat_intel_iocs": db.query(ThreatIntelIOC).count(),
             }
         }
         return stats
